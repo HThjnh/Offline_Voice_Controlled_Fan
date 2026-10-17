@@ -84,16 +84,16 @@ ESP32
 
 The system uses six predefined commands.
 
-| Command            | Function                                   |
-| ------------------ | ------------------------------------------ |
-| `Turn On`          | Turn the fan on at the minimum level       |
-| `Turn Off`         | Turn the fan off and reset the power level |
-| `Set Low`          | Set fan power to 25%                       |
-| `Set Medium`       | Set fan power to 50%                       |
-| `Set High`         | Set fan power to 75%                       |
-| `Set Max`          | Set fan power to 100%                      |
-| `Unknown`          | Unknown command, do nothing                |
-| `Background_noise` | Noise form environment, people, other device, etc
+| Command            | Function                                          |
+| ------------------ | ------------------------------------------------- |
+| `Turn On`          | Turn the fan on at the minimum level              |
+| `Turn Off`         | Turn the fan off and reset the power level        |
+| `Set Low`          | Set fan power to 25%                              | 
+| `Set Medium`       | Set fan power to 50%                              |
+| `Set High`         | Set fan power to 75%                              |
+| `Set Max`          | Set fan power to 100%                             |
+| `Unknown`          | Unknown command, do nothing                       |
+| `Background_noise` | Noise from environment, people, other device, etc |
 
 ### Fan Control Logic
 
