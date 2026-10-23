@@ -1,29 +1,30 @@
 #include "control.h"
-
+/*
 static fan_level_t current_level = SPEED_OFF;
 
 void control_init(void) {
     fan_init();
     display_init();
 
-    current_level = SPEED_OFF;
     display_clear();
-    display_draw_string(8, "SMART FAN", true);
+    display_draw_string(8,  "SMART FAN", true);
     display_draw_string(24, "STATUS: OFF", true);
     display_draw_string(40, "SPEED: 0%", true);
+    display_draw_string(64, "LISTENING...", true);
     display_update();
 }
 
 void control_level(fan_level_t level) {
-    current_level = level;
     fan_set_level(level);
 
     display_clear();
     display_draw_string(8, "SMART FAN", true);
+
     switch (level) {
         case SPEED_OFF: 
             display_draw_string(24, "STATUS: OFF", true);
             display_draw_string(40, "SPEED: 0%", true);
+            display_draw_string(64, "RECOGNIZED")
             break;
 
         case SPEED_LOW:
@@ -49,6 +50,8 @@ void control_level(fan_level_t level) {
         default:
             return;
     }
-    display_update();
+
 }
+*/
+
 

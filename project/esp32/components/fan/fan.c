@@ -61,9 +61,3 @@ void fan_set_level(fan_level_t level) {
     ledc_set_duty(FAN_PWM_MODE, FAN_PWM_CHANNEL, duty);
     ledc_update_duty(FAN_PWM_MODE, FAN_PWM_CHANNEL);
 }
-
-void fan_stop(void) {
-    uint8_t duty = 0;
-    ledc_set_duty(FAN_PWM_MODE, FAN_PWM_CHANNEL, duty);
-    ledc_update_duty(FAN_PWM_MODE, FAN_PWM_CHANNEL);
-}
