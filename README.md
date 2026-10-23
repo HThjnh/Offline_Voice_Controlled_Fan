@@ -84,14 +84,16 @@ ESP32
 
 The system uses six predefined commands.
 
-| Command    | Function                                   |
-| ---------- | ------------------------------------------ |
-| `Turn On`  | Turn the fan on at the minimum level       |
-| `Turn Off` | Turn the fan off and reset the power level |
-| `Low`      | Set fan power to 25%                       |
-| `Medium`   | Set fan power to 50%                       |
-| `High`     | Set fan power to 75%                       |
-| `Max`      | Set fan power to 100%                      |
+| Command            | Function                                          |
+| ------------------ | ------------------------------------------------- |
+| `Turn On`          | Turn the fan on at the minimum level              |
+| `Turn Off`         | Turn the fan off and reset the power level        |
+| `Set Low`          | Set fan power to 25%                              | 
+| `Set Medium`       | Set fan power to 50%                              |
+| `Set High`         | Set fan power to 75%                              |
+| `Set Max`          | Set fan power to 100%                             |
+| `Unknown`          | Unknown command, do nothing                       |
+| `Background_noise` | Noise from environment, people, other device, etc |
 
 ### Fan Control Logic
 
@@ -104,24 +106,24 @@ Turn On
    ↓
 Power = 25%
 
-Low
+Set Low
    ↓
 Power = 25%
 
-Medium
+Set Medium
    ↓
 Power = 50%
 
-High
+Set High
    ↓
 Power = 75%
 
-Max
+Set Max
    ↓
 Power = 100%
 ```
 
-`High` and `Max` directly set the corresponding power level.
+`Set High` and `Set Max` directly set the corresponding power level.
 The system does not need to pass through the intermediate levels.
 
 When the fan is turned off, the power level is reset to `0%`.
@@ -203,7 +205,7 @@ Mel-Spectrogram / Audio Features
     ↓
 Neural Network
     ↓
-6-Class Classification
+8-Class Classification
     ↓
 Voice Command
 ```
@@ -214,47 +216,7 @@ The exact model architecture and preprocessing parameters will be determined dur
 
 ---
 
-## 7. Project Structure
-
-```text
-Offline_Voice_Controlled_Fan/
-│
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── test/
-│
-├── documents/
-│   ├── hardware/
-│   ├── software/
-│   ├── ai_model/
-│   ├── system_design/
-│   ├── requirements/
-│   ├── testing/
-│   └── results/
-│
-├── logs/
-│
-├── models/
-│   ├── trained/
-│   ├── quantized/
-│   └── deployment/
-│
-├── project/
-│   ├── esp32/
-│   └── python/
-│
-├── tests/
-│   ├── esp32/
-│   └── python/
-│
-├── .gitignore
-└── README.md
-```
-
----
-
-## 8. Team Development
+## 7. Team Development
 
 The project follows a full-stack team structure.
 
