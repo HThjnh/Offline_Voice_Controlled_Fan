@@ -1,0 +1,5 @@
+idf_component_register(
+    SRCS "encoder.c"
+    INCLUDE_DIRS "inc"
+    REQUIRES esp_driver_pcnt esp_timer
+)

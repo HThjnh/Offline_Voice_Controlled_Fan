@@ -14,6 +14,12 @@ static esp_lcd_panel_io_handle_t display_io;
 static esp_lcd_panel_handle_t display_panel;
 static uint8_t display_buffer[128 * 64 / 8];
 
+/**
+ * @brief Configure and initialize the I2C SSD1306 display.
+ *
+ * Creates the I2C master bus, panel I/O interface, and SSD1306 panel.
+ * Then clears the framebuffer and sends its contents to the screen.
+ */
 void display_init(void) {
     i2c_master_bus_config_t bus_config = {
         .i2c_port = I2C_NUM_0,
@@ -46,20 +52,31 @@ void display_init(void) {
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(display_panel, true, true));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(display_panel, true));
     memset(display_buffer, 0x00, sizeof(display_buffer));
-    display_draw_char(10, 10, 'A', true);
 
     display_update();
 }
 
+/**
+ * @brief Transfer the entire framebuffer to the SSD1306 display.
+ */
 void display_update(void) {
     ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(display_panel,0,0,128,64,display_buffer));
 }
 
+/**
+ * @brief Clear all pixels and immediately refresh the OLED.
+ */
 void display_clear(void) {
     memset(display_buffer, 0x00, sizeof(display_buffer));
     display_update();
 }
 
+/**
+ * @brief Set or clear a pixel in the local framebuffer.
+ *
+ * SSD1306 memory is organized into 8-pixel-high pages. Each byte stores
+ * the vertical pixels at one horizontal coordinate within a page.
+ */
 void display_draw_pixel(int x, int y, bool color) {
     if (x < 0 || x > 127 || y < 0 || y > 63) return;
 
@@ -70,6 +87,12 @@ void display_draw_pixel(int x, int y, bool color) {
     else      display_buffer[byte_index] &= ~(1 << bit);
 }
 
+/**
+ * @brief Draw an 8x8 glyph from the font table into the framebuffer.
+ *
+ * Uses the requested color for foreground pixels and the opposite
+ * color for background pixels.
+ */
 void display_draw_char(int x, int y, char c, bool color) {
     if (x < 0 || x + 8 > 128 || y < 0 || y + 8 > 64) {
         return;
@@ -94,6 +117,14 @@ void display_draw_char(int x, int y, char c, bool color) {
     }
 }
 
+/**
+ * @brief Draw a horizontally centered string using 8x8 characters.
+ *
+ * This function updates the framebuffer only. Call display_update()
+ * afterward to display the new text.
+ *
+ * @note The existing implementation expects a non-empty string.
+ */
 void display_draw_string(int y, const char *text, bool color) {
     int length = 0;
 
@@ -106,7 +137,7 @@ void display_draw_string(int y, const char *text, bool color) {
 
     display_draw_char(x, y, text[0], color);
 
-    for (int i = 1; i < length; i++) {
+    for (int i = 0; i < length; i++) {
         display_draw_char(x + i * 8, y, text[i], color);
     }
 }
