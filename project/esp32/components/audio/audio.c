@@ -11,10 +11,10 @@ static i2s_chan_handle_t rx_handle = NULL;
 #define AUDIO_SAMPLE_RATE   16000
 #define AUDIO_GPIO_BCLK     26
 #define AUDIO_GPIO_WS       25
-#define AUDIO_GPIO_DIN      33
+#define AUDIO_GPIO_DIN      34
 
 #define AUDIO_BITS_PER_SAMPLE   I2S_DATA_BIT_WIDTH_32BIT
-#define AUDIO_SLOT_MODE         I2S_SLOT_MODE_MONO
+#define AUDIO_SLOT_MODE         I2S_SLOT_MODE_MONO  
 
 esp_err_t audio_init(void) {
     if (rx_handle != NULL) {

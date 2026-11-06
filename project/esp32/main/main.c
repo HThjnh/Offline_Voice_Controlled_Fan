@@ -9,13 +9,13 @@
 #include "freertos/task.h"
 
 //#include "fan.h"
-//#include "display.h"
+#include "display.h"
 #include "command.h"
 #include "preprocess.h"
 #include "kws_config.h"
 #include "wav_reader.h"
 #include "audio.h"
-//#include "encoder.h"
+#include "encoder.h"
 //#include "pid_controller.h"
 
 #define MIC_READ_SAMPLES 256
@@ -33,7 +33,13 @@ static int16_t i2s_to_pcm16(int32_t value)
 
 void app_main(void)
 {
+    display_draw_char(8, 24, 'A', true);
     ESP_LOGI(TAG, "===== MICROPHONE -> PREPROCESS -> KWS =====");
+    // Initialize encoder
+    ESP_ERROR_CHECK(encoder_init());
+    ESP_ERROR_CHECK(encoder_reset());
+
+    ESP_LOGI("ENCODER_TEST", "Encoder initialized");
     esp_err_t ret = preprocess_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "preprocess_init: %s", esp_err_to_name(ret));
@@ -62,6 +68,19 @@ void app_main(void)
     unsigned trial = 0;
     while (true) {
         ++trial;
+        int encoder_count = 0;
+
+        esp_err_t enc_ret = encoder_get_count(&encoder_count);
+
+        if (enc_ret == ESP_OK) {
+            ESP_LOGI("ENCODER_TEST",
+                    "Encoder count = %d",
+                    encoder_count);
+        } 
+        else {
+            ESP_LOGE("ENCODER_TEST",
+                    "Failed to read encoder");
+        }
         size_t collected = 0;
         int32_t min_pcm = INT16_MAX;
         int32_t max_pcm = INT16_MIN;
@@ -149,6 +168,16 @@ void app_main(void)
         int predicted_class = -1;
         float confidence = 0;
         ret = command_predict(features, sizeof(features), &predicted_class, &confidence);
+        if (confidence < 0.80f) {
+            ESP_LOGW(TAG,
+                    "Prediction rejected: confidence=%.4f",
+                    (double)confidence);
+        } 
+        else {
+            ESP_LOGI(TAG,
+                    "Prediction accepted: %s",
+                    KWS_LABELS[predicted_class]);
+        }
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "command_predict: %s", esp_err_to_name(ret));
             goto stop;
