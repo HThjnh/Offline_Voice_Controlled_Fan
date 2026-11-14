@@ -9,7 +9,6 @@ static float clamp_float(float value, float min, float max) {
     if (value < min) {
         return min;
     }
-
     if (value > max) {
         return max;
     }
@@ -90,39 +89,30 @@ uint16_t pid_controller_compute(pid_controller_t *pid, float actual_rpm) {
 
     // Calculate speed error
     float error = pid->target_rpm - actual_rpm;
-
     // Proportional term
     float p_term = pid->kp * error;
-
     // Derivative on measurement
     float d_term = 0.0f;
 
     if (pid->has_prev_rpm) {
-        float rpm_rate =
-            (actual_rpm - pid->prev_rpm) / pid->dt;
-
+        float rpm_rate = (actual_rpm - pid->prev_rpm) / pid->dt;
         d_term = -pid->kd * rpm_rate;
     }
 
-    // Calculate candidate integral value
+    // Calculate the candidate integral term
     float candidate_integral = pid->integral + pid->ki * error * pid->dt;
-
-    // Calculate candidate PWM
+    // Calculate candidate output
     float candidate_output = p_term + candidate_integral + d_term;
+    // Clamp the output to the configured PWM limits
+    float output = clamp_float(candidate_output, pid->output_min, pid->output_max);
 
-    // Anti-windup: prevent further saturation
-    bool saturating_high = candidate_output > pid->output_max && error > 0.0f;
-
-    bool saturating_low = candidate_output < pid->output_min && error < 0.0f;
-
-    if (!saturating_high && !saturating_low) {
+    // Anti-windup: Keep the integral consistent with the saturated PWM output
+    if((candidate_output > pid->output_max && error > 0.0f) || (candidate_output < pid->output_min && error < 0.0f)) {
+        pid->integral = output - p_term - d_term;
+    }
+    else {
         pid->integral = candidate_integral;
     }
-
-    // Calculate and limit the final PWM output
-    float output = p_term + pid->integral + d_term;
-
-    output = clamp_float(output, pid->output_min, pid->output_max);
 
     // Update derivative history
     pid->prev_rpm = actual_rpm;

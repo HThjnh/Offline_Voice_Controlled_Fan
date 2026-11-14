@@ -67,8 +67,8 @@ static void compute_power_spectrum(void) {
         float imag = fft_buffer[2*k+1];
 
         power_spectrum[k] = real * real + imag*imag;
-    }
-    }
+    }    
+}
 
 /**
  * @brief Convert a linear frequency in hertz to the Mel scale.
@@ -90,8 +90,7 @@ static float hz_to_mel(float hz) {
  *
  * @return ESP_OK on success, or ESP_ERR_INVALID_SIZE if capacity is exceeded.
  */
-static esp_err_t generate_mel_filterbank(void)
-{
+static esp_err_t generate_mel_filterbank(void) {
     const float mel_min = hz_to_mel(KWS_FMIN);
     const float mel_max = hz_to_mel(KWS_FMAX);
     const float mel_step = (mel_max - mel_min) / (KWS_N_MEL + 1);
@@ -103,7 +102,7 @@ static esp_err_t generate_mel_filterbank(void)
         float mel_freq = hz_to_mel(freq);
         for (int m = 0; m < KWS_N_MEL; m++) {
             float left = mel_min + m * mel_step;
-                        float center = left + mel_step;
+            float center = left + mel_step;
             float right = center + mel_step;
             float weight = 0.0f;
             if (k != 0) {
@@ -138,7 +137,7 @@ static esp_err_t generate_mel_filterbank(void)
     for (int k = 0; k < KWS_SPECTRUM_BINS; k++) {
         float freq = (float)k * KWS_SAMPLE_RATE / KWS_N_FFT;
         float mel_freq = hz_to_mel(freq);
-                for (int m = 0; m < KWS_N_MEL; m++) {
+        for (int m = 0; m < KWS_N_MEL; m++) {
             float left = mel_min + m * mel_step;
             float center = left + mel_step;
             float right = center + mel_step;
@@ -348,9 +347,7 @@ static esp_err_t preprocess_extract_internal(const float *pcm, const uint8_t *pc
         esp_err_t ret = process_frame(pcm, pcm16, frame);
 
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG,
-                     "Failed to process frame %d",
-                                          frame);
+            ESP_LOGE(TAG, "Failed to process frame %d", frame);
             return ret;
         }
     }
@@ -363,38 +360,25 @@ static esp_err_t preprocess_extract_internal(const float *pcm, const uint8_t *pc
         return ESP_FAIL;
     }
 
-
     ESP_LOGI(TAG, "Log-Mel mean = %.6f", (double)mean);
-
-    ESP_LOGI(TAG, "Processed %d Log-Mel frames",
-             KWS_N_FRAMES);
-
-    ESP_LOGI(TAG, "Log-Mel[0][0] = %.6f",
-             (double)log_mel_frames[0][0]);
-
-    ESP_LOGI(TAG, "Log-Mel[98][39] = %.6f",
-             (double)log_mel_frames[98][39]);
+    ESP_LOGI(TAG, "Processed %d Log-Mel frames", KWS_N_FRAMES);
+    ESP_LOGI(TAG, "Log-Mel[0][0] = %.6f", (double)log_mel_frames[0][0]);
+    ESP_LOGI(TAG, "Log-Mel[98][39] = %.6f", (double)log_mel_frames[98][39]);
 
     //7. Mean Normalization + INT8 Quantization
     for (int t = 0; t < KWS_N_FRAMES; t++) {
         for (int m = 0; m < KWS_N_MEL; m++) {
 
             // Mean normalization + Feature scaling
-            float normalized =
-                (log_mel_frames[t][m] - mean) *
-                KWS_FEATURE_SCALE;
+            float normalized = (log_mel_frames[t][m] - mean) * KWS_FEATURE_SCALE;
             // 2. Check normalized feature
             if (!isfinite(normalized)) {
-                                ESP_LOGE(TAG,
-                        "Invalid feature [%d][%d]", t, m);
+                ESP_LOGE(TAG,"Invalid feature [%d][%d]", t, m);
                 return ESP_FAIL;
             }
 
             // INT8 quantization
-            float q = nearbyintf(
-                normalized / KWS_IN_SCALE +
-                KWS_IN_ZERO_POINT
-            );
+            float q = nearbyintf(normalized / KWS_IN_SCALE + KWS_IN_ZERO_POINT);
 
             // Clip to INT8 range
             q = fmaxf(-128.0f, fminf(127.0f, q));

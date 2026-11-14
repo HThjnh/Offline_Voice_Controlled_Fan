@@ -6,10 +6,8 @@ idf_component_register(
         display
         preprocess
         command
-        wav_reader
         encoder
         pid_controller
         audio
-    EMBED_FILES
-        "low.wav" "noise.wav" "unknown.wav" "high.wav" "off.wav"
+        control
 )

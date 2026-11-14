@@ -42,7 +42,7 @@ esp_err_t encoder_init(void) {
 
     // Use encoder A for pulse counting and B for direction
     pcnt_chan_config_t channel_config = {
-        .edge_gpio_num = ENCODER_GPIO_A,
+        .edge_gpio_num  = ENCODER_GPIO_A,
         .level_gpio_num = ENCODER_GPIO_B
     };
     pcnt_channel_handle_t channel = NULL;
@@ -162,14 +162,12 @@ esp_err_t encoder_get_rpm(encoder_speed_t *speed, float counts_per_rev, float *r
     }
 
     int current_count = 0;
-
     esp_err_t ret = encoder_get_count(&current_count);
     if (ret != ESP_OK) {
         return ret;
     }
 
     int64_t current_time_us = esp_timer_get_time();
-
     // Initialize the first measurement
     if (!speed->initialized) {
         speed->previous_count = current_count;

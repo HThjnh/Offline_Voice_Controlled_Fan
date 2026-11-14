@@ -1,14 +1,47 @@
 #include "fan.h"
+
+#include <stdbool.h>
 #include "driver/ledc.h"
+#include "driver/gpio.h"
+#include "esp_err.h"
+#include "esp_log.h"
 
 #define FAN_PWM_GPIO        18
+#define FAN_AIN1_GPIO       16
+#define FAN_AIN2_GPIO       17
+#define FAN_STBY_GPIO       23
+
 #define FAN_PWM_FREQ        20000
 #define FAN_PWM_RESOLUTION  LEDC_TIMER_10_BIT
 #define FAN_PWM_TIMER       LEDC_TIMER_0
 #define FAN_PWM_CHANNEL     LEDC_CHANNEL_0
 #define FAN_PWM_MODE        LEDC_LOW_SPEED_MODE
+#define FAN_PWM_MAX         1023
+
+// 0: Disable motor output for software testing
+// 1: Enable real motor control after hardware checks
+#define FAN_ENABLE_OUTPUT  1
+
+static const char *TAG = "FAN";
+static bool fan_initialized = false;
+
 
 void fan_init() {
+    // Configure direction and standby pins
+    gpio_config_t gpio_cfg = {
+        .pin_bit_mask = (1ULL << FAN_AIN1_GPIO) | (1ULL << FAN_AIN2_GPIO) | (1ULL << FAN_STBY_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    ESP_ERROR_CHECK(gpio_config(&gpio_cfg));
+
+    // Keep driver disabled during initialization
+    ESP_ERROR_CHECK(gpio_set_level(FAN_STBY_GPIO, 0));
+    ESP_ERROR_CHECK(gpio_set_level(FAN_AIN1_GPIO, 0));
+    ESP_ERROR_CHECK(gpio_set_level(FAN_AIN2_GPIO, 0));
+
     ledc_timer_config_t timer_config = {
         .speed_mode      = FAN_PWM_MODE,
         .timer_num       = FAN_PWM_TIMER,
@@ -27,37 +60,47 @@ void fan_init() {
         .hpoint     = 0
     };
     ESP_ERROR_CHECK(ledc_channel_config(&channel_config));
+    ESP_ERROR_CHECK(ledc_fade_func_install(0));
+
+    fan_initialized = true;
+    fan_set_pwm(0);
+
+    ESP_LOGI(TAG, "TB6612FNG initialized");
+
+#if FAN_ENABLE_OUTPUT == 0
+    ESP_LOGW(TAG, "Motor output disabled (test mode)");
+#endif
 }
 
-void fan_set_level(fan_level_t level) {
-    uint16_t duty;
-
-    switch(level) {
-        case SPEED_OFF:
-            duty = 0;          //0%
-            break;
-
-        case SPEED_LOW:
-            duty = 256;        //25%
-            break;
-
-        case SPEED_MEDIUM:
-            duty = 512;        //50%
-            break;
-
-        case SPEED_HIGH:
-            duty = 768;        //75%
-            break;
-
-        case SPEED_MAX:
-            duty = 1023;       //100%
-            break;
-            
-        default:
-            duty = 0;
-            break;
+void fan_set_pwm(uint16_t duty) {
+    if (!fan_initialized) {
+        ESP_LOGE(TAG, "fan_init() not called");
+        return;
     }
+    if (duty > FAN_PWM_MAX) {
+        duty = FAN_PWM_MAX;
+    }
+#if FAN_ENABLE_OUTPUT == 0
+    duty = 0;
+#endif
+    if (duty == 0) {
+            // Disable motor driver
+            ESP_ERROR_CHECK(gpio_set_level(FAN_STBY_GPIO, 0));
+            ESP_ERROR_CHECK(ledc_set_duty_and_update(FAN_PWM_MODE, FAN_PWM_CHANNEL, 0, 0));
+            ESP_ERROR_CHECK(gpio_set_level(FAN_AIN1_GPIO, 0));
+            ESP_ERROR_CHECK(gpio_set_level(FAN_AIN2_GPIO, 0));
+            return;
+        } 
+        // Set forward rotation
+        ESP_ERROR_CHECK(gpio_set_level(FAN_AIN1_GPIO, 1));
+        ESP_ERROR_CHECK(gpio_set_level(FAN_AIN2_GPIO, 0));
+        // Update PWM duty
+        ESP_ERROR_CHECK(ledc_set_duty_and_update(FAN_PWM_MODE, FAN_PWM_CHANNEL, duty, 0));
 
-    ledc_set_duty(FAN_PWM_MODE, FAN_PWM_CHANNEL, duty);
-    ledc_update_duty(FAN_PWM_MODE, FAN_PWM_CHANNEL);
+        // Enable motor driver.
+        ESP_ERROR_CHECK(gpio_set_level(FAN_STBY_GPIO, 1));
+
+        // Debug only to avoid excessive serial logging.
+        ESP_LOGD(TAG, "PWM duty=%u", (unsigned)duty);
 }
+

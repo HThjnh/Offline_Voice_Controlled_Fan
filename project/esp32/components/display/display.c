@@ -1,13 +1,22 @@
 #include "display.h"
 #include "font.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/i2c_master.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ssd1306.h"
 #include "esp_lcd_panel_ops.h"
+
+#include "esp_log.h"
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #define DISPLAY_SDA     21
 #define DISPLAY_SCL     22
+#define DISPLAY_WIDTH   128
+#define DISPLAY_HEIGHT  64
 
 static i2c_master_bus_handle_t display_i2c_bus;
 static esp_lcd_panel_io_handle_t display_io;
@@ -30,10 +39,19 @@ void display_init(void) {
         .flags.enable_internal_pullup = true,
     };
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &display_i2c_bus));
+    // Check whether the SSD1306 acknowledges its I2C address.
+    esp_err_t probe_ret = i2c_master_probe(
+        display_i2c_bus,
+        0x3C,
+        1000
+    );
+
+    ESP_LOGI("OLED", "I2C probe: %s",
+            esp_err_to_name(probe_ret));
 
     esp_lcd_panel_io_i2c_config_t io_config = {
         .dev_addr = 0x3C,
-        .scl_speed_hz = 400000,
+        .scl_speed_hz = 100000,
         .control_phase_bytes = 1,
         .dc_bit_offset = 6,
         .lcd_cmd_bits = 8,
@@ -46,22 +64,44 @@ void display_init(void) {
         .reset_gpio_num = -1,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(display_io, &panel_config, &display_panel));
-
     ESP_ERROR_CHECK(esp_lcd_panel_reset(display_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(display_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(display_panel, true, true));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(display_panel, true));
-    memset(display_buffer, 0x00, sizeof(display_buffer));
 
+    // Clear RAM and update the panel once at startup.
+    memset(display_buffer, 0x00, sizeof(display_buffer));
     display_update();
+    ESP_LOGI("OLED", "Clear framebuffer sent");
 }
 
 /**
  * @brief Transfer the entire framebuffer to the SSD1306 display.
  */
-void display_update(void) {
-    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(display_panel,0,0,128,64,display_buffer));
+void display_update(void)
+{
+    // Select Page Addressing Mode.
+    uint8_t mode = 0x02;
+
+    ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(display_io, 0x20, &mode, 1));
+
+    // Write all 8 display pages.
+    for (int page = 0; page < 8; page++) {
+
+        // Select page 0 to 7.
+        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(display_io, 0xB0 + page, NULL, 0));
+
+        // Set column address to 0.
+        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_param(display_io, 0x00, NULL, 0));
+
+        ESP_ERROR_CHECK(
+            esp_lcd_panel_io_tx_param(display_io, 0x10, NULL, 0));
+
+        // Transfer 128 bytes for the selected page.
+        ESP_ERROR_CHECK(esp_lcd_panel_io_tx_color(display_io, -1, &display_buffer[page * DISPLAY_WIDTH], DISPLAY_WIDTH));
+    }
 }
+
 
 /**
  * @brief Clear all pixels and immediately refresh the OLED.
@@ -101,18 +141,10 @@ void display_draw_char(int x, int y, char c, bool color) {
     const uint8_t *bitmap = font8x8[(uint8_t)c];
 
     for (int row = 0; row < 8; row++) {
-
         uint8_t data = bitmap[row];
-
         for (int col = 0; col < 8; col++) {
-
             bool pixel = (data >> (7 - col)) & 1;
-
-            display_draw_pixel(
-                x + col,
-                y + row,
-                pixel ? color : !color
-            );
+            display_draw_pixel(x + col, y + row, pixel ? color : !color);
         }
     }
 }
@@ -127,18 +159,13 @@ void display_draw_char(int x, int y, char c, bool color) {
  */
 void display_draw_string(int y, const char *text, bool color) {
     int length = 0;
-
     while (text[length] != '\0') {
         length++;
     }
 
     int text_width = length * 8;
     int x = (128 - text_width) / 2;
-
-    display_draw_char(x, y, text[0], color);
-
     for (int i = 0; i < length; i++) {
         display_draw_char(x + i * 8, y, text[i], color);
     }
 }
-

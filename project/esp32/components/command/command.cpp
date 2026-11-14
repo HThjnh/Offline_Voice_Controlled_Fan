@@ -62,10 +62,7 @@ extern "C" esp_err_t command_init(void) {
 
     //Check schema
     if(model->version() != TFLITE_SCHEMA_VERSION) {
-        ESP_LOGE(TAG, "Schema mismatch: model = %u, runtime = %d", 
-                    (unsigned int)model->version(),
-                    TFLITE_SCHEMA_VERSION
-                );
+        ESP_LOGE(TAG, "Schema mismatch: model = %u, runtime = %d", (unsigned int)model->version(), TFLITE_SCHEMA_VERSION);
         return ESP_FAIL;
     }
     ESP_LOGI(TAG, "Schema version: %u", (unsigned int)model->version());
@@ -91,10 +88,7 @@ extern "C" esp_err_t command_init(void) {
     ESP_LOGI(TAG, "TFLite operators registered");
 
     //Allocate Tensor Arena
-    tensor_arena = (uint8_t *)heap_caps_malloc(
-        TENSOR_ARENA_SIZE, 
-        MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT
-    );
+    tensor_arena = (uint8_t *)heap_caps_malloc(TENSOR_ARENA_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if(tensor_arena == nullptr) {
         ESP_LOGE(TAG, "Tensor Arena allocation failed");
         return ESP_ERR_NO_MEM;
@@ -103,12 +97,7 @@ extern "C" esp_err_t command_init(void) {
         
 
     //Create MicroInterpreter
-    static tflite::MicroInterpreter static_interpreter(
-        model,
-        resolver,
-        tensor_arena,
-        TENSOR_ARENA_SIZE
-    );
+    static tflite::MicroInterpreter static_interpreter(model, resolver, tensor_arena, TENSOR_ARENA_SIZE);
     interpreter = &static_interpreter;
     ESP_LOGI(TAG, "MicroInterpreter created");
 
@@ -119,9 +108,7 @@ extern "C" esp_err_t command_init(void) {
         return ESP_FAIL;
     }
     ESP_LOGI(TAG, "Allocate Tensors OK");
-    ESP_LOGI(TAG, "Tensor Arena used: %u bytes", 
-                (unsigned int)interpreter->arena_used_bytes()
-            );
+    ESP_LOGI(TAG, "Tensor Arena used: %u bytes", (unsigned int)interpreter->arena_used_bytes());
 
     // Get input and output tensors
     TfLiteTensor *input = interpreter->input(0);
@@ -133,8 +120,7 @@ extern "C" esp_err_t command_init(void) {
     }
 
     // Check INT8 data types
-    if (input->type != kTfLiteInt8 ||
-        output->type != kTfLiteInt8) {
+    if (input->type != kTfLiteInt8 || output->type != kTfLiteInt8) {
         ESP_LOGE(TAG, "Model input/output is not INT8");
         return ESP_FAIL;
     }
@@ -162,18 +148,13 @@ extern "C" esp_err_t command_init(void) {
         ESP_LOGE(TAG, "Incorrect output size");
         return ESP_FAIL;
     }
-    ESP_LOGI(TAG, "Input shape: [1,%d,%d,1]",
-                KWS_N_FRAMES, KWS_N_MEL);
-    ESP_LOGI(TAG, "Output classes: %d",
-                KWS_NUM_CLASSES);
-    ESP_LOGI(TAG, "Input scale: %.9f",
-                (double)input->params.scale);
-    ESP_LOGI(TAG, "Input zero point: %d",
-                (int)input->params.zero_point);
-    ESP_LOGI(TAG, "Output scale: %.9f",
-                (double)output->params.scale);
-    ESP_LOGI(TAG, "Output zero point: %d",
-                (int)output->params.zero_point);
+    ESP_LOGI(TAG, "Input shape: [1,%d,%d,1]", KWS_N_FRAMES, KWS_N_MEL);
+    ESP_LOGI(TAG, "Output classes: %d", KWS_NUM_CLASSES);
+    ESP_LOGI(TAG, "Input scale: %.9f", (double)input->params.scale);
+    ESP_LOGI(TAG, "Input zero point: %d", (int)input->params.zero_point);
+    ESP_LOGI(TAG, "Output scale: %.9f", (double)output->params.scale);
+    ESP_LOGI(TAG, "Output zero point: %d", (int)output->params.zero_point);
+
     if(fabsf(input->params.scale - KWS_IN_SCALE) > 1e-6f || input->params.zero_point != KWS_IN_ZERO_POINT) {
         ESP_LOGE(TAG, "Input quantization mismatch");
         return ESP_FAIL;
@@ -197,9 +178,7 @@ extern "C" esp_err_t command_init(void) {
 
     initialized = true;
     ESP_LOGI(TAG, "Command component initialized");
-    ESP_LOGI(TAG, "Free RAM after KWS init: %u bytes",
-                (unsigned int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
-            );
+    ESP_LOGI(TAG, "Free RAM after KWS init: %u bytes", (unsigned int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
     ESP_LOGI(TAG, "===== KWS READY =====");
     return ESP_OK; 
 }
@@ -230,12 +209,10 @@ extern "C" esp_err_t command_predict(
     }
     
     //Check argument
-    if(features == nullptr ||
-       predicted_class == nullptr ||
-       confidence == nullptr) {
+    if(features == nullptr || predicted_class == nullptr || confidence == nullptr) {
             ESP_LOGE(TAG, "Invalid argument");
             return ESP_ERR_INVALID_ARG;
-       }
+    }
     if(features_count != KWS_N_FRAMES*KWS_N_MEL) {
         ESP_LOGE(TAG, "Invalid feature count: %u", (unsigned int)features_count);
         return ESP_ERR_INVALID_SIZE;
