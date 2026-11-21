@@ -27,6 +27,9 @@ dist/
 .mypy_cache/
 .ruff_cache/
 
+# WAV file (record file)
+*.wav 
+
 
 # =========================================================
 # IDE / Editor
@@ -125,3 +128,23 @@ models/quantized/
 *.temp
 *.bak
 *.swp
+
+# =========================================================
+# Pictures / Images
+# =========================================================
+
+.png
+.jpg
+
+# ESP-IDF generated files
+esp32/managed_components/
+esp32/build/
+
+# Temporary files
+sh.exe.stackdump
+
+# Local datasets and training outputs
+python/data/
+python/kws_out/
+python/tc_resnet8_out/
+python/compare_out/
