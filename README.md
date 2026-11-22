@@ -22,6 +22,7 @@ The main objectives are:
 - Develop and evaluate the TinyML model using Python.
 
 ## 2. System Architecture
+```mermaid
 
 flowchart BT
 
@@ -92,6 +93,7 @@ flowchart BT
     class PRE,KWS ai
     class AUDIO,ENCODER,FAN,DISPLAY driver
     class MIC,MOTOR_DRIVER,MOTOR,ENC_HW,OLED hardware
+```
 
 ### Layer Responsibilities
 
