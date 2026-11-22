@@ -25,68 +25,13 @@ The main objectives are:
 
 The system follows a layered architecture consisting of four main layers. Each layer has a specific responsibility, from application-level command processing to low-level hardware interaction.
 
-### Layered Architecture Diagram
-
-```mermaid
 flowchart TB
+    L1["Layer 1: Application & Control<br/>main.c · control.c · pid_controller.c"]
+    L2["Layer 2: Audio Processing & AI<br/>preprocess.c · command.cpp"]
+    L3["Layer 3: Hardware Interface & Drivers<br/>audio.c · encoder.c · fan.c · display.c"]
+    L4["Layer 4: Physical Hardware<br/>INMP441 · TB6612FNG · JGA25-370 · Encoder · SSD1306"]
 
-    subgraph L1["Layer 1 — Application & Control Layer"]
-        direction LR
-        MAIN["main.c<br/>System Orchestration"]
-        CONTROL["control.c<br/>Command Processing<br/>Target RPM Management"]
-        PID["pid_controller.c<br/>PI Speed Controller"]
-    end
-
-    subgraph L2["Layer 2 — Audio Processing & AI Layer"]
-        direction LR
-        PRE["preprocess.c<br/>Audio Preprocessing<br/>Log-Mel Extraction"]
-        KWS["command.cpp<br/>ResNet8 KWS<br/>TensorFlow Lite Micro"]
-    end
-
-    subgraph L3["Layer 3 — Hardware Interface & Driver Layer"]
-        direction LR
-        AUDIO["audio.c<br/>I2S Driver"]
-        ENCODER["encoder.c<br/>PCNT Driver"]
-        FAN["fan.c<br/>LEDC PWM / GPIO"]
-        DISPLAY["display.c<br/>I2C Driver"]
-    end
-
-    subgraph L4["Layer 4 — Physical Hardware Layer"]
-        direction LR
-        MIC["INMP441<br/>Microphone"]
-        MOTOR_DRIVER["TB6612FNG<br/>Motor Driver"]
-        MOTOR["JGA25-370<br/>DC Motor"]
-        ENC_HW["Motor Encoder"]
-        OLED["SSD1306<br/>OLED Display"]
-    end
-
-    MIC --> AUDIO
-    AUDIO --> PRE
-    PRE --> KWS
-    KWS --> MAIN
-    MAIN --> CONTROL
-    CONTROL --> PID
-    PID --> FAN
-    FAN --> MOTOR_DRIVER
-    MOTOR_DRIVER --> MOTOR
-
-    MOTOR --> ENC_HW
-    ENC_HW --> ENCODER
-    ENCODER --> CONTROL
-
-    MAIN --> DISPLAY
-    DISPLAY --> OLED
-
-    classDef application fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    classDef ai fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
-    classDef driver fill:#dcfce7,stroke:#16a34a,color:#14532d
-    classDef hardware fill:#fef3c7,stroke:#d97706,color:#78350f
-
-    class MAIN,CONTROL,PID application
-    class PRE,KWS ai
-    class AUDIO,ENCODER,FAN,DISPLAY driver
-    class MIC,MOTOR_DRIVER,MOTOR,ENC_HW,OLED hardware
-```
+    L1 --> L2 --> L3 --> L4
 
 ### Layer Responsibilities
 
